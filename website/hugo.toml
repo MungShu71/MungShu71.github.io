@@ -1,5 +1,5 @@
-baseURL = 'localhost'
-locale = 'en-us'
+baseURL = 'https://MungShu71.github.io/'
+languageCode = 'en-us'                 
 title = 'My New Hugo Project'
 theme = 'hugo-xmin'
 

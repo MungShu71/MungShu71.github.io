@@ -1,6 +1,6 @@
 baseURL = 'https://MungShu71.github.io/'
 languageCode = 'en-us'                 
-title = 'My New Hugo Project'
+title = 'Mung-Shu'
 theme = 'hugo-xmin'
 
 [caches]

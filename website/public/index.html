@@ -1,35 +1,26 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-  <meta name="generator" content="Hugo 0.161.1"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta http-equiv="refresh" content="0; url=/about/">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title></title>
     <link rel="stylesheet" href="/css/style.css" />
     <link rel="stylesheet" href="/css/fonts.css" />
-
   </head>
   <body>
-    {{ with .GetPage `about.md` }}
-  <h1>{{ .Title }}</h1>
-  {{ .Content }}
-{{ end }}
+    {{ with .GetPage "about.md" }}
+    <h1>{{ .Title }}</h1>
+    {{ .Content }}
+    {{ end }}
     <nav>
-
     <ul class="menu">
-
       <li><a href="/about/">about</a></li>
-
       <li><a href="/stuff/">stuff</a></li>
-
     </ul>
     <hr/>
     </nav>
-<ul>
-
-</ul>
-  <footer>
-
-  </footer>
+    <ul></ul>
+    <footer></footer>
   </body>
 </html>

@@ -1,0 +1,15 @@
+baseURL = 'localhost'
+locale = 'en-us'
+title = 'My New Hugo Project'
+theme = 'hugo-xmin'
+
+[menu]
+  [[menu.main]]
+    identifier  = "about"
+    name        = "about"
+    url         = "about/"
+
+  [[menu.main]]
+    identifier  = "stuff"
+    name        = "stuff"
+    url         = "stuff/"

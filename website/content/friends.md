@@ -1,5 +1,5 @@
 ---
-title: brothers from another mother
+title: friends 
 ---
 
 - [Leo Chang](https://changleok.github.io/about/)

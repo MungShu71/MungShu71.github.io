@@ -17,3 +17,8 @@ theme = 'hugo-xmin'
     identifier  = "stuff"
     name        = "stuff"
     url         = "stuff/"
+
+  [[menu.main]]
+    identifier  = "homies"
+    name        = "homies"
+    url         = "homies/"

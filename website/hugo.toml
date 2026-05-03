@@ -12,13 +12,17 @@ theme = 'hugo-xmin'
     identifier  = "about"
     name        = "about"
     url         = "about/"
+    weight      = 1
 
   [[menu.main]]
     identifier  = "stuff"
     name        = "stuff"
     url         = "stuff/"
+    weight      = 2
 
   [[menu.main]]
     identifier  = "homies"
     name        = "homies"
     url         = "homies/"
+    weight      = 3
+

@@ -1,0 +1,15 @@
+{{- $target := "about/" | absURL -}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Redirecting to {{ $target }}</title>
+    <link rel="canonical" href="{{ $target }}">
+    <meta http-equiv="refresh" content="0; url={{ $target }}">
+    <script type="text/javascript">
+      window.location.href = "{{ $target }}"
+    </script>
+  </head>
+  <body>
+    <p>Redirecting to <a href="{{ $target }}">{{ $target }}</a></p>
+  </body>
+</html>

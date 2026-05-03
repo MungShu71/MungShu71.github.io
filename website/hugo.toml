@@ -6,20 +6,22 @@ theme = 'hugo-xmin'
 [caches]
   [caches.images]
     dir = ':cacheDir/images'
-
+    
 [menu]
   [[menu.main]]
-    identifier  = "about"
-    name        = "about"
-    url         = "about/"
+    identifier = "about"
+    name = "about"
+    url = "about/"
+    weight = 1
 
   [[menu.main]]
-    identifier  = "stuff"
-    name        = "stuff"
-    url         = "stuff/"
+    identifier = "stuff"
+    name = "stuff"
+    url = "stuff/"
+    weight = 2
 
   [[menu.main]]
-    identifier  = "homies"
-    name        = "homies"
-    url         = "homies/"
-
+    identifier = "homies"
+    name = "homies"
+    url = "homies/"
+    weight = 3

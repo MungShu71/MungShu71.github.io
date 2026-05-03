@@ -3,6 +3,9 @@ languageCode = 'en-us'
 title = 'My New Hugo Project'
 theme = 'hugo-xmin'
 
+- name: Build
+  run: hugo --gc --minify
+
 [caches]
   [caches.images]
     dir = ':cacheDir/images'

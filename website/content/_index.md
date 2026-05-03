@@ -1,1 +1,3 @@
-{{< ref "about.md" >}}
+
+<meta http-equiv="refresh" content="0; url=/about/" />
+<link rel="canonical" href="/about/" />

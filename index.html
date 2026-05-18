@@ -8,5 +8,197 @@
 </head>
 <body>
     <p>Hello There</p>
+
+<style>
+body {
+        background: #111;
+            color: white;
+                font-family: sans-serif;
+                    text-align: center;
+}
+
+canvas {
+        background: black;
+            border: 2px solid white;
+                touch-action: none;
+}
+
+button {
+        margin: 10px;
+            padding: 10px 20px;
+                font-size: 18px;
+}
+
+#prediction {
+        font-size: 40px;
+            margin-top: 20px;
+}
+</style>
+<h1>Draw a Digit</h1>
+
+<canvas id="canvas" width="280" height="280"></canvas>
+
+<div>
+        <button onclick="predict()">Predict</button>
+            <button onclick="clearCanvas()">Clear</button>
+</div>
+
+<div id="prediction">Prediction: ?</div>
+
+<script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 20;
+    ctx.lineCap = "round";
+
+    let drawing = false;
+
+    canvas.addEventListener("mousedown", () => drawing = true);
+    canvas.addEventListener("mouseup", () => drawing = false);
+    canvas.addEventListener("mousemove", draw);
+
+    function draw(e) {
+            if (!drawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+    }
+
+    function clearCanvas() {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            document.getElementById("prediction").innerText =
+                    "Prediction: ?";
+    }
+
+    let model;
+
+    async function loadModel() {
+            const response = await fetch("/model.json");
+            model = await response.json();
+
+            console.log("Model loaded");
+    }
+
+    loadModel();
+
+    function relu(arr) {
+            return arr.map(v => Math.max(0, v));
+    }
+
+    function softmax(arr) {
+            const max = Math.max(...arr);
+
+            const exps = arr.map(v => Math.exp(v - max));
+
+            const sum = exps.reduce((a, b) => a + b, 0);
+
+            return exps.map(v => v / sum);
+    }
+
+    function linear(x, w, b) {
+            const out = [];
+
+            for (let j = 0; j < w[0].length; j++) {
+
+                        let sum = b[0][j];
+
+                        for (let i = 0; i < x.length; i++) {
+                                        sum += x[i] * w[i][j];
+                                    }
+
+                        out.push(sum);
+                    }
+
+            return out;
+    }
+
+    function getInputTensor() {
+
+            const tempCanvas = document.createElement("canvas");
+            tempCanvas.width = 28;
+            tempCanvas.height = 28;
+
+            const tctx = tempCanvas.getContext("2d");
+
+            tctx.drawImage(canvas, 0, 0, 28, 28);
+
+            const imageData = tctx.getImageData(0, 0, 28, 28);
+
+            const input = [];
+
+            for (let i = 0; i < imageData.data.length; i += 4) {
+
+                        const r = imageData.data[i];
+
+                        input.push(r / 255.0);
+                    }
+
+            return input;
+    }
+
+    function argmax(arr) {
+            let best = 0;
+
+            for (let i = 1; i < arr.length; i++) {
+                        if (arr[i] > arr[best]) {
+                                        best = i;
+                                    }
+                    }
+
+            return best;
+    }
+
+    function predict() {
+
+            let x = getInputTensor();
+
+            x = relu(linear(
+                        x,
+                        model.l1_w,
+                        model.l1_b
+                    ));
+
+            x = relu(linear(
+                        x,
+                        model.l2_w,
+                        model.l2_b
+                    ));
+
+            x = relu(linear(
+                        x,
+                        model.l3_w,
+                        model.l3_b
+                    ));
+
+            x = softmax(linear(
+                        x,
+                        model.l4_w,
+                        model.l4_b
+                    ));
+
+            const digit = argmax(x);
+
+            const confidence = (x[digit] * 100).toFixed(1);
+
+            document.getElementById("prediction").innerText =
+                    `Prediction: ${digit} (${confidence}%)`;
+    }
+</script>
+</head>
 </body>
 </html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+        <meta charset="UTF-8">
+        <title>MNIST Predictor</title>
+        <style>
+                /* body {
+                        background: #111;
+                        color: white;
+                        font-family: sans-serif;
+                        text-align: center;
+                } */
+
+                canvas {
+                        text-align: center;
+                        cursor: crosshair;
+                        background: black;
+                        border: 2px solid white;
+                        touch-action: auto;
+                        display: block;
+                        margin: 0 auto;
+                }
+
+                button {
+                        margin: 10px;
+                        padding: 10px 20px;
+                        font-size: 18px;
+                        cursor: pointer;
+                }
+
+                #prediction {
+                        text-align: center;
+                        font-size: 40px;
+                        margin-top: 20px;
+                }
+        </style>
+</head>
+
+<body>
+
+        <h1 style="text-align: center;">Draw a Digit</h1>
+
+        <canvas id="canvas" width="280" height="280"></canvas>
+
+        <div style="text-align: center;">
+        <button onclick="predict()">Predict</button>
+        <button onclick="clearCanvas()">Clear</button>
+        </div>
+
+        <div id="prediction">Prediction: ?</div>
+
+        <script>
+                const canvas = document.getElementById("canvas");
+                const ctx = canvas.getContext("2d");
+
+                ctx.fillStyle = "black";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Note: Increased line width slightly to 24 to preserve stroke weight better upon compression
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 24;
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+
+                let drawing = false;
+
+                canvas.addEventListener("mousedown", (e) => {
+                        drawing = true;
+                        ctx.beginPath();
+                        const rect = canvas.getBoundingClientRect();
+                        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+                });
+
+                canvas.addEventListener("mouseup", () => drawing = false);
+                canvas.addEventListener("mouseleave", () => drawing = false);
+                canvas.addEventListener("mousemove", draw);
+
+                function draw(e) {
+                        if (!drawing) return;
+
+                        const rect = canvas.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+
+                        ctx.lineTo(x, y);
+                        ctx.stroke();
+                }
+
+                function clearCanvas() {
+                        ctx.fillStyle = "black";
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        document.getElementById("prediction").innerText = "Prediction: ?";
+                }
+
+                let model = null;
+
+                async function loadModel() {
+                        try {
+                                const response = await fetch("/model.json");
+                                if (!response.ok) {
+                                        throw new Error("Failed to load model");
+                                }
+                                model = await response.json();
+                                console.log("Model loaded successfully.");
+                        } catch (err) {
+                                console.error(err);
+                                document.getElementById("prediction").innerText = "Error loading model";
+                        }
+                }
+
+                loadModel();
+
+                function relu(arr) {
+                        return arr.map(v => Math.max(0, v));
+                }
+
+                function softmax(arr) {
+                        const max = Math.max(...arr);
+                        const exps = arr.map(v => Math.exp(v - max));
+                        const sum = exps.reduce((a, b) => a + b, 0);
+                        return exps.map(v => v / sum);
+                }
+
+                function linear(x, w, b) {
+                        const out = [];
+                        for (let j = 0; j < w[0].length; j++) {
+                                let sum = b[0][j];
+                                for (let i = 0; i < x.length; i++) {
+                                        sum += x[i] * w[i][j];
+                                }
+                                out.push(sum);
+                        }
+                        return out;
+                }
+
+                // FIXED & PREPROCESSED: Bounding-box crop and auto-center logic
+                function getInputTensor() {
+                        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        
+                        // Set boundaries to extreme opposites to track minimum/maximum values
+                        let minX = canvas.width;
+                        let maxX = 0;
+                        let minY = canvas.height;
+                        let maxY = 0;
+                        let hasPixels = false;
+
+                        // Loop through pixels to find the bounding box of the white stroke
+                        for (let y = 0; y < canvas.height; y++) {
+                                for (let x = 0; x < canvas.width; x++) {
+                                        const index = (y * canvas.width + x) * 4;
+                                        const r = imgData.data[index]; // White has high RGB values
+
+                                        if (r > 20) { // Threshold for identifying drawn pixels
+                                                if (x < minX) minX = x;
+                                                if (x > maxX) maxX = x;
+                                                if (y < minY) minY = y;
+                                                if (y > maxY) maxY = y;
+                                                hasPixels = true;
+                                        }
+                                }
+                        }
+
+                        // Initialize a fresh 28x28 black matrix array if canvas is untouched
+                        if (!hasPixels) {
+                                return new Array(784).fill(0);
+                        }
+
+                        // Calculate dimensions of the bounding box
+                        const digitWidth = (maxX - minX) + 1;
+                        const digitHeight = (maxY - minY) + 1;
+
+                        // Create a temporary 28x28 rendering canvas
+                        const tempCanvas = document.createElement("canvas");
+                        tempCanvas.width = 28;
+                        tempCanvas.height = 28;
+                        const tctx = tempCanvas.getContext("2d");
+
+                        // Fill background with black
+                        tctx.fillStyle = "black";
+                        tctx.fillRect(0, 0, 28, 28);
+
+                        // Match standard MNIST format: bounding box occupies roughly 20px of the 28px square
+                        const maxDim = Math.max(digitWidth, digitHeight);
+                        const scale = 20 / maxDim;
+
+                        const targetWidth = digitWidth * scale;
+                        const targetHeight = digitHeight * scale;
+
+                        // Center coordinates inside the 28x28 box
+                        const dx = (28 - targetWidth) / 2;
+                        const dy = (28 - targetHeight) / 2;
+
+                        tctx.imageSmoothingEnabled = true;
+                        tctx.imageSmoothingQuality = "high";
+
+                        // Crop the focused region out of your large canvas and draw it into the tiny centered grid
+                        tctx.drawImage(
+                                canvas, 
+                                minX, minY, digitWidth, digitHeight, // Source Crop Coordinates
+                                dx, dy, targetWidth, targetHeight    // Destination Target Coordinates
+                        );
+
+                        // Read back the centered 28x28 matrix data
+                        const imageData = tctx.getImageData(0, 0, 28, 28);
+                        const input = [];
+
+                        for (let i = 0; i < imageData.data.length; i += 4) {
+                                const r = imageData.data[i];
+                                input.push(r / 255.0); // Normalization
+                        }
+
+                        return input;
+                }
+
+                function argmax(arr) {
+                        let best = 0;
+                        for (let i = 1; i < arr.length; i++) {
+                                if (arr[i] > arr[best]) {
+                                        best = i;
+                                }
+                        }
+                        return best;
+                }
+
+                function predict() {
+                        if (!model) {
+                                alert("Model is still loading, please wait a moment!");
+                                return;
+                        }
+
+                        let x = getInputTensor();
+
+                        x = relu(linear(x, model.l1_w, model.l1_b));
+                        x = relu(linear(x, model.l2_w, model.l2_b));
+                        x = relu(linear(x, model.l3_w, model.l3_b));
+                        x = softmax(linear(x, model.l4_w, model.l4_b));
+
+                        const digit = argmax(x);
+                        const confidence = (x[digit] * 100).toFixed(1);
+
+                        console.log(`Predicted Digit: ${digit} with ${confidence}% confidence.`);
+                        document.getElementById("prediction").innerText = `Prediction: ${digit} (${confidence}%)`;
+                }
+        </script>
+
+</body>
+</html>

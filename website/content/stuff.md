@@ -1,6 +1,8 @@
 ---
 title: stuff I found interesting
 ---
+- [MNIST from scratch]({{< ref "/posts/mnist.md" >}})
+
 - GeoHash
     
     <-TODO->

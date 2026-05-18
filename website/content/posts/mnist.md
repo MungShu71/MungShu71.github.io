@@ -3,7 +3,7 @@ title = "MNIST Digit Recognizer"
 date = 2026-05-18
 +++
 
-MNIST digit recognizer from scratch just using Numpy.
+MNIST digit recognizer from scratch using just Numpy.
 
 {{< mnist-predictor >}}
 
